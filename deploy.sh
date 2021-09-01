@@ -81,11 +81,20 @@ prepare_build_dir (){
     echo "build: criando link simbólico de $GOV_MA_UPLOAD_DIR para $GOV_MA_WORK_DIR/data/html/uploads"
     ln -s $GOV_MA_UPLOAD_DIR $GOV_MA_WORK_DIR/data/html/uploads
 
+    # aqui pode entrar a chamativa pra compilar os assets (CSS) usando um outro container que tenha as coisas (npm, sei lá mais o que precisa)
+    # bastaria montar essa working dir pra dentro do container, e fazer o output dela dentro dessa parte
+    # talvez temos que duplicar a config nesse repo de CI, ou então copiar mais arquivos de volta do SRC git (pq aqui copiamos apenas data/ que é a parte util pro site
+    # mas pro build talvez seja nesessario copiar mais coisas pelo menos temporariamente, tipo o package.json)
+
     TS=$(date '+%FT%T')
     GOV_MA_BUILD_DIR="$GOV_MA_SERVER_BASE_DIR/data-build--$TS"
 
     echo "build: renomeando $GOV_MA_WORK_DIR para $GOV_MA_BUILD_DIR"
     mv $GOV_MA_WORK_DIR $GOV_MA_BUILD_DIR
+
+    # nesse passo, podemos incluir alguns testes, por exemplo, subir o container um novo container
+    # do apache conectado nas mesmas networks (logo, mesmo banco da produção) e fazer um GET na homepage ou outro lugar que faça os testes de conexão e templates, etc
+    # e se a resposta for 200, entao temmos mais chance desse novo código ir pro ar e tambem dar 200
 
 }
 
