@@ -21,6 +21,9 @@ GOV_MA_SERVER_BASE_DIR="${GOV_MA_SERVER_BASE_DIR:-$HOME/gov_ma_server}"
 # diretorio com os uploads que sempre são os mesmos entre todas as versoes do site
 GOV_MA_UPLOAD_DIR="${GOV_MA_UPLOAD_DIR:-$HOME/gov_ma_uploads}"
 
+# diretorio com a pasta node_modules pra agilizar o build
+NODE_MODULES_CACHE_DIR="${NODE_MODULES_CACHE_DIR:-$HOME/gov_ma_node_modules}"
+
 [ ! -d "$GOV_MA_SERVER_BASE_DIR" ] && echo "GOV_MA_SERVER_BASE_DIR [$GOV_MA_SERVER_BASE_DIR] não existe. Configurare o diretorio base (este diretorio precisa ser montado no container do apache)" && exit
 [ ! -d "$GOV_MA_UPLOAD_DIR" ] && echo "GOV_MA_UPLOAD_DIR [$GOV_MA_UPLOAD_DIR] não existe. Diretorio de upload persistente precisa existir!" && exit
 [ ! -d "$GOV_MA_CI_GIT" ] && echo "GOV_MA_CI_GIT [$GOV_MA_CI_GIT] não existe ou não está configurado corretamente" && exit
@@ -29,6 +32,9 @@ GOV_MA_UPLOAD_DIR="${GOV_MA_UPLOAD_DIR:-$HOME/gov_ma_uploads}"
 [ ! -f "$GOV_MA_CI_GIT/deploy.sh" ] && echo "[$GOV_MA_CI_GIT/deploy.sh] não existe!" && exit
 [ ! -d "$GOV_MA_CI_GIT/vendor" ] && echo "[$GOV_MA_CI_GIT/vendor] não existe!" && exit
 [ ! -f "$GOV_MA_CI_GIT/vendor/$EE_CURRENT_VERSION" ] && echo "[$GOV_MA_CI_GIT/vendor/$EE_CURRENT_VERSION] não existe!" && exit
+
+[ ! -d "$NODE_MODULES_CACHE_DIR" ] && mkdir -p $NODE_MODULES_CACHE_DIR && chown 1000:1000 $NODE_MODULES_CACHE_DIR
+
 
 GOV_MA_WORK_DIR=""
 
@@ -51,6 +57,15 @@ require_clean_work_tree () {
     then
         echo >&2 "cannot $1: your index contains uncommitted changes."
         git diff-index --cached --name-status -r --ignore-submodules HEAD -- >&2
+        err=1
+    fi
+
+    CH=$(git ls-files -o --directory --exclude-standard | sed q | wc -l)
+    # Disallow uncommitted diff
+    if (( $CH > 0 ))
+    then
+        echo >&2 "cannot $1: git contains untracked files:"
+        git status
         err=1
     fi
 
@@ -91,6 +106,14 @@ prepare_build_dir (){
 
     rsync -a --stats $GOV_MA_GIT_SRC_DIR/ $GOV_MA_WORK_DIR/
 
+    echo "build: fazendo build dos assets"
+
+    # troca pro 1000, pro user "node" conseguir escrever
+    chown 1000:1000 $GOV_MA_WORK_DIR/data/ -R
+
+    deploy_build_assets
+
+    # volta pro 33 que é o que o apache vai usar
     chown 33:33 $GOV_MA_WORK_DIR/data/ -R
 
     echo "build: descompatando vendors..."
@@ -102,9 +125,6 @@ prepare_build_dir (){
 
     echo "build: apagando diretorio $GOV_MA_WORK_DIR/data/html/uploads"
     rm -rf $GOV_MA_WORK_DIR/data/html/uploads
-
-    echo "build: criando link simbólico de $GOV_MA_UPLOAD_DIR para $GOV_MA_WORK_DIR/data/html/uploads"
-    ln -s $GOV_MA_UPLOAD_DIR $GOV_MA_WORK_DIR/data/html/uploads
 
     GOV_MA_BUILD_DIR="$GOV_MA_SERVER_BASE_DIR/data-build--$BUILD_TS"
 
@@ -123,15 +143,27 @@ deploy_build_dir() {
 
     echo "build: elevando $GOV_MA_BUILD_DIR para current-version"
     cd $GOV_MA_SERVER_BASE_DIR
-    ln -s $GOV_MA_BUILD_DIR symlink_new_link && mv -T symlink_new_link current-version
+
+    ln -s data-build--$BUILD_TS symlink_new_link && mv -T symlink_new_link current-version
 
 }
+
+deploy_build_assets() {
+    cd $GOV_MA_WORK_DIR/docker/builder
+    docker build . -t gov-ma-builder
+
+    # just in case
+    rm -rf $GOV_MA_WORK_DIR/node_modules
+
+    docker run --rm -v $GOV_MA_WORK_DIR:/src -v $NODE_MODULES_CACHE_DIR:/src/node_modules -u node gov-ma-builder \
+        sh -c 'cd /src; npm install && npm run build:docs && npm run prod'
+
+}
+
 
 prepare_source_dir
 
 prepare_build_dir
 
 deploy_build_dir
-
-
 
