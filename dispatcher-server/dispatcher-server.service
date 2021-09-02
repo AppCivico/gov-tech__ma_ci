@@ -1,0 +1,15 @@
+[Unit]
+Description=Deploy Dispacher
+After=network.target auditd.service
+
+[Service]
+Environment="LISTEN_ADDR=:8080"
+Environment="DEPLOY_CMD=/path/to/deploy.sh"
+ExecStart=/path/to/dispatcher-server
+Restart=on-failure
+RestartPreventExitStatus=255
+Type=simple
+
+[Install]
+WantedBy=multi-user.target
+Alias=dispatcher-server.service
