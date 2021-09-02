@@ -1,6 +1,16 @@
 #!/bin/bash
+set -e
+
+BUILD_TS=$(date '+%F-%Hh%Mm%Ss')
 
 HOME="/home/$USER"
+
+EE_CURRENT_VERSION="ee.6.0.6.patched.tar.gz"
+
+# diretorio com o source deste proprio deploy.sh!
+GOV_MA_CI_GIT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
+set -x
 
 # diretorio com o source code para a nova versao
 GOV_MA_GIT_SRC_DIR="${GOV_MA_GIT_SRC_DIR:-$HOME/gov_ma_git}"
@@ -13,6 +23,12 @@ GOV_MA_UPLOAD_DIR="${GOV_MA_UPLOAD_DIR:-$HOME/gov_ma_uploads}"
 
 [ ! -d "$GOV_MA_SERVER_BASE_DIR" ] && echo "GOV_MA_SERVER_BASE_DIR [$GOV_MA_SERVER_BASE_DIR] não existe. Configurare o diretorio base (este diretorio precisa ser montado no container do apache)" && exit
 [ ! -d "$GOV_MA_UPLOAD_DIR" ] && echo "GOV_MA_UPLOAD_DIR [$GOV_MA_UPLOAD_DIR] não existe. Diretorio de upload persistente precisa existir!" && exit
+[ ! -d "$GOV_MA_CI_GIT" ] && echo "GOV_MA_CI_GIT [$GOV_MA_CI_GIT] não existe ou não está configurado corretamente" && exit
+
+# testando se os arquivos do CI existem
+[ ! -f "$GOV_MA_CI_GIT/deploy.sh" ] && echo "[$GOV_MA_CI_GIT/deploy.sh] não existe!" && exit
+[ ! -d "$GOV_MA_CI_GIT/vendor" ] && echo "[$GOV_MA_CI_GIT/vendor] não existe!" && exit
+[ ! -f "$GOV_MA_CI_GIT/vendor/$EE_CURRENT_VERSION" ] && echo "[$GOV_MA_CI_GIT/vendor/$EE_CURRENT_VERSION] não existe!" && exit
 
 GOV_MA_WORK_DIR=""
 
@@ -53,6 +69,7 @@ prepare_source_dir() {
     # conferindo se o source (git) esta com os arquivos esperados
     [ ! -d "$GOV_MA_GIT_SRC_DIR/data" ] && echo "$GOV_MA_GIT_SRC_DIR/data não existe" && exit
     [ ! -d "$GOV_MA_GIT_SRC_DIR/data/system" ] && echo "$GOV_MA_GIT_SRC_DIR/data/system não existe" && exit
+    [ ! -d "$GOV_MA_GIT_SRC_DIR/data/system/user" ] && echo "$GOV_MA_GIT_SRC_DIR/data/system/user não existe" && exit
     [ ! -d "$GOV_MA_GIT_SRC_DIR/data/html" ] && echo "$GOV_MA_GIT_SRC_DIR/data/html não existe" && exit
 
     cd $GOV_MA_GIT_SRC_DIR
@@ -70,27 +87,29 @@ prepare_build_dir (){
 
     echo "build: Criando diretorio para build GOV_MA_WORK_DIR [$GOV_MA_WORK_DIR]" && mkdir -p $GOV_MA_WORK_DIR
 
-    echo "build: Clonando $GOV_MA_GIT_SRC_DIR/data/ para $GOV_MA_WORK_DIR/data/"
+    echo "build: Clonando $GOV_MA_GIT_SRC_DIR/ para $GOV_MA_WORK_DIR/"
 
-    rsync -a --stats $GOV_MA_GIT_SRC_DIR/data/ $GOV_MA_WORK_DIR/data/
+    rsync -a --stats $GOV_MA_GIT_SRC_DIR/ $GOV_MA_WORK_DIR/
 
-    # PS: aqui talvez a gente tire a copia mas mova para outro lugar temporario, mas que não vá ficar até o final do build
+    chown 33:33 $GOV_MA_WORK_DIR/data/ -R
+
+    echo "build: descompatando vendors..."
+    tar -xf $GOV_MA_CI_GIT/vendor/$EE_CURRENT_VERSION --directory $GOV_MA_WORK_DIR/data/system/
+
+    echo "build: sincronizando diretorio de uploads $GOV_MA_WORK_DIR/data/html/uploads com $GOV_MA_UPLOAD_DIR"
+
+    rsync -a --stats $GOV_MA_WORK_DIR/data/html/uploads/.[^.]* $GOV_MA_UPLOAD_DIR/
+
     echo "build: apagando diretorio $GOV_MA_WORK_DIR/data/html/uploads"
     rm -rf $GOV_MA_WORK_DIR/data/html/uploads
 
     echo "build: criando link simbólico de $GOV_MA_UPLOAD_DIR para $GOV_MA_WORK_DIR/data/html/uploads"
     ln -s $GOV_MA_UPLOAD_DIR $GOV_MA_WORK_DIR/data/html/uploads
 
-    # aqui pode entrar a chamativa pra compilar os assets (CSS) usando um outro container que tenha as coisas (npm, sei lá mais o que precisa)
-    # bastaria montar essa working dir pra dentro do container, e fazer o output dela dentro dessa parte
-    # talvez temos que duplicar a config nesse repo de CI, ou então copiar mais arquivos de volta do SRC git (pq aqui copiamos apenas data/ que é a parte util pro site
-    # mas pro build talvez seja nesessario copiar mais coisas pelo menos temporariamente, tipo o package.json)
+    GOV_MA_BUILD_DIR="$GOV_MA_SERVER_BASE_DIR/data-build--$BUILD_TS"
 
-    TS=$(date '+%FT%T')
-    GOV_MA_BUILD_DIR="$GOV_MA_SERVER_BASE_DIR/data-build--$TS"
-
-    echo "build: renomeando $GOV_MA_WORK_DIR para $GOV_MA_BUILD_DIR"
-    mv $GOV_MA_WORK_DIR $GOV_MA_BUILD_DIR
+    echo "build: renomeando $GOV_MA_WORK_DIR/data para $GOV_MA_BUILD_DIR"
+    mv $GOV_MA_WORK_DIR/data $GOV_MA_BUILD_DIR
 
     # nesse passo, podemos incluir alguns testes, por exemplo, subir o container um novo container
     # do apache conectado nas mesmas networks (logo, mesmo banco da produção) e fazer um GET na homepage ou outro lugar que faça os testes de conexão e templates, etc
