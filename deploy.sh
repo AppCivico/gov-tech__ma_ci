@@ -182,6 +182,9 @@ deploy_build_dir() {
     chown -h 33:33 symlink_new_link
 
     mv -T symlink_new_link current-version
+
+    set +x
+    printf ">-------------------------------------------<\n           successfully deployed\n>-------------------------------------------<\n\n"
 }
 
 deploy_build_assets() {
@@ -197,8 +200,6 @@ deploy_build_assets() {
     docker run --rm -v $GOV_MA_WORK_DIR:/src -v $NODE_MODULES_CACHE_DIR:/src/node_modules -u node gov-ma-builder \
         sh -c 'cd /src; npm install && npm run build:docs && npm run prod'
 
-    set +x
-    printf ">-------------------------------------------<\n           successfully deployed\n>-------------------------------------------<\n\n"
 }
 
 prepare_source_dir
