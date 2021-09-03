@@ -40,14 +40,12 @@ func deployHandler(w http.ResponseWriter, r *http.Request) {
 		// Read line by line and process it
 		for scanner.Scan() {
 			line := scanner.Text()
-			if f, ok := w.(http.Flusher); ok {
-				f.Flush()
-			} else {
-				log.Println("Damn, no flush")
-			}
-
 			fmt.Fprintln(w, line)
 			log.Println(line)
+
+			if f, ok := w.(http.Flusher); ok {
+				f.Flush()
+			}
 		}
 
 		// We're all done, unblock the channel
@@ -65,10 +63,10 @@ func deployHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	<-done
+
 	// Wait for all output to be processed
 	err = cmd.Wait()
-
-	<-done
 
 	if err != nil {
 		w.WriteHeader(http.StatusAccepted)
