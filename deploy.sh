@@ -166,8 +166,8 @@ deploy_build_assets() {
     # just in case
     rm -rf $GOV_MA_WORK_DIR/node_modules
 
-    #docker run --rm -v $GOV_MA_WORK_DIR:/src -v $NODE_MODULES_CACHE_DIR:/src/node_modules -u node gov-ma-builder \
-    #    sh -c 'cd /src; npm install && npm run build:docs && npm run prod'
+    docker run --rm -v $GOV_MA_WORK_DIR:/src -v $NODE_MODULES_CACHE_DIR:/src/node_modules -u node gov-ma-builder \
+        sh -c 'cd /src; npm install && npm run build:docs && npm run prod'
 
 }
 
