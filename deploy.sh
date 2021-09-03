@@ -115,7 +115,7 @@ prepare_build_dir (){
     echo "build: fazendo build dos assets"
 
     # troca pro 1000, pro user "node" conseguir escrever
-    chown 1000:1000 $GOV_MA_WORK_DIR/data/ -R
+    chown 1000:1000 $GOV_MA_WORK_DIR/ -R
 
     deploy_build_assets
 
@@ -168,9 +168,6 @@ deploy_build_assets() {
 
     # just in case
     rm -rf $GOV_MA_WORK_DIR/node_modules
-
-    touch $GOV_MA_WORK_DIR/package-lock.json
-    chown 1000:1000 $GOV_MA_WORK_DIR/package-lock.json
 
     docker run --rm -v $GOV_MA_WORK_DIR:/src -v $NODE_MODULES_CACHE_DIR:/src/node_modules -u node gov-ma-builder \
         sh -c 'cd /src; npm install && npm run build:docs && npm run prod'
