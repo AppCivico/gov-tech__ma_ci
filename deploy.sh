@@ -24,6 +24,10 @@ GOV_MA_UPLOAD_DIR="${GOV_MA_UPLOAD_DIR:-$HOME/gov_ma_uploads}"
 # diretorio com a pasta node_modules pra agilizar o build
 NODE_MODULES_CACHE_DIR="${NODE_MODULES_CACHE_DIR:-$HOME/gov_ma_node_modules}"
 
+# arquivo de configuração do EE com ENVS que podem trocar durante o runtime sem downtime
+# (eg: email, banco(?!!?!), etc)
+GOV_MA_USER_ENV_FILE="${GOV_MA_USER_ENV_FILE:-$HOME/gov_ma_user_envfile}"
+
 [ ! -d "$GOV_MA_SERVER_BASE_DIR" ] && echo "GOV_MA_SERVER_BASE_DIR [$GOV_MA_SERVER_BASE_DIR] não existe. Configurare o diretorio base (este diretorio precisa ser montado no container do apache)" && exit
 [ ! -d "$GOV_MA_UPLOAD_DIR" ] && echo "GOV_MA_UPLOAD_DIR [$GOV_MA_UPLOAD_DIR] não existe. Diretorio de upload persistente precisa existir!" && exit
 [ ! -d "$GOV_MA_CI_GIT" ] && echo "GOV_MA_CI_GIT [$GOV_MA_CI_GIT] não existe ou não está configurado corretamente" && exit
@@ -32,6 +36,7 @@ NODE_MODULES_CACHE_DIR="${NODE_MODULES_CACHE_DIR:-$HOME/gov_ma_node_modules}"
 [ ! -f "$GOV_MA_CI_GIT/deploy.sh" ] && echo "[$GOV_MA_CI_GIT/deploy.sh] não existe!" && exit
 [ ! -d "$GOV_MA_CI_GIT/vendor" ] && echo "[$GOV_MA_CI_GIT/vendor] não existe!" && exit
 [ ! -f "$GOV_MA_CI_GIT/vendor/$EE_CURRENT_VERSION" ] && echo "[$GOV_MA_CI_GIT/vendor/$EE_CURRENT_VERSION] não existe!" && exit
+[ ! -f "$GOV_MA_USER_ENV_FILE" ] && echo "[$GOV_MA_USER_ENV_FILE] não existe! Abortando..." && exit
 
 [ ! -d "$NODE_MODULES_CACHE_DIR" ] && mkdir -p $NODE_MODULES_CACHE_DIR && chown 1000:1000 $NODE_MODULES_CACHE_DIR
 
@@ -113,11 +118,11 @@ prepare_build_dir (){
 
     deploy_build_assets
 
-    # volta pro 33 que é o que o apache vai usar
-    chown 33:33 $GOV_MA_WORK_DIR/data/ -R
-
     echo "build: descompatando vendors..."
     tar -xf $GOV_MA_CI_GIT/vendor/$EE_CURRENT_VERSION --directory $GOV_MA_WORK_DIR/data/system/
+
+    # volta pro 33 que é o que o apache vai usar
+    chown 33:33 $GOV_MA_WORK_DIR/data/ -R
 
     echo "build: sincronizando diretorio de uploads $GOV_MA_WORK_DIR/data/html/uploads com $GOV_MA_UPLOAD_DIR"
 
