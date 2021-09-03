@@ -36,7 +36,7 @@ GOV_MA_USER_ENV_FILE="${GOV_MA_USER_ENV_FILE:-$HOME/gov_ma_user_envfile}"
 [ ! -f "$GOV_MA_CI_GIT/deploy.sh" ] && echo "[$GOV_MA_CI_GIT/deploy.sh] não existe!" && exit
 [ ! -d "$GOV_MA_CI_GIT/vendor" ] && echo "[$GOV_MA_CI_GIT/vendor] não existe!" && exit
 [ ! -f "$GOV_MA_CI_GIT/vendor/$EE_CURRENT_VERSION" ] && echo "[$GOV_MA_CI_GIT/vendor/$EE_CURRENT_VERSION] não existe!" && exit
-[ ! -f "$GOV_MA_USER_ENV_FILE" ] && echo "[$GOV_MA_USER_ENV_FILE] não existe! Abortando..." && exit
+[ ! -f "$GOV_MA_USER_ENV_FILE" ] && echo "GOV_MA_USER_ENV_FILE [$GOV_MA_USER_ENV_FILE] não existe! Abortando..." && exit
 
 [ ! -d "$NODE_MODULES_CACHE_DIR" ] && mkdir -p $NODE_MODULES_CACHE_DIR && chown 1000:1000 $NODE_MODULES_CACHE_DIR
 
@@ -120,6 +120,8 @@ prepare_build_dir (){
 
     echo "build: descompatando vendors..."
     tar -xf $GOV_MA_CI_GIT/vendor/$EE_CURRENT_VERSION --directory $GOV_MA_WORK_DIR/data/system/
+
+    cp $GOV_MA_USER_ENV_FILE $GOV_MA_WORK_DIR/data/user/config/.env
 
     # volta pro 33 que é o que o apache vai usar
     chown 33:33 $GOV_MA_WORK_DIR/data/ -R
