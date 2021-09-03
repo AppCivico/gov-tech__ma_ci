@@ -192,7 +192,7 @@ deploy_build_assets() {
     rm -rf $GOV_MA_WORK_DIR/node_modules
 
     # if the directory was created empty by root on first time
-    chown 1000:1000 $NODE_MODULES_CACHE_DIR:/src/node_modules
+    chown 1000:1000 $NODE_MODULES_CACHE_DIR
 
     docker run --rm -v $GOV_MA_WORK_DIR:/src -v $NODE_MODULES_CACHE_DIR:/src/node_modules -u node gov-ma-builder \
         sh -c 'cd /src; npm install && npm run build:docs && npm run prod'
