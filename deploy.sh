@@ -109,7 +109,7 @@ prepare_source_dir() {
 prepare_build_dir (){
     GOV_MA_WORK_DIR="${GOV_MA_WORK_DIR:-$HOME/gov_ma_tmp_build}"
 
-    [ -d "$GOV_MA_WORK_DIR"] echo "build: apagando $GOV_MA_WORK_DIR. build anterior incompleto?" && rm -rf $GOV_MA_WORK_DIR
+    [ -d "$GOV_MA_WORK_DIR" ] && echo "build: apagando $GOV_MA_WORK_DIR. build anterior incompleto?" && rm -rf $GOV_MA_WORK_DIR
 
     echo "build: Criando diretorio para build GOV_MA_WORK_DIR [$GOV_MA_WORK_DIR]" && mkdir -p $GOV_MA_WORK_DIR
 
