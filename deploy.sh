@@ -139,6 +139,7 @@ prepare_build_dir (){
     echo "build: criando link simbolico para pasta de uploads"
     cd $GOV_MA_WORK_DIR/data/html
     ln -s ../../../uploads uploads
+    chown -h 33:33 uploads
 
     GOV_MA_BUILD_DIR="$GOV_MA_SERVER_BASE_DIR/data-build--$BUILD_TS"
 
