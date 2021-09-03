@@ -1,1 +1,1 @@
-dispatcher-server built for amd64
+dispatcher-server was built for amd64
