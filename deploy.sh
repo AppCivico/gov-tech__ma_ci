@@ -136,6 +136,10 @@ prepare_build_dir (){
     echo "build: apagando diretorio $GOV_MA_WORK_DIR/data/html/uploads"
     rm -rf $GOV_MA_WORK_DIR/data/html/uploads
 
+    echo "build: criando link simbolico para pasta de uploads"
+    cd $GOV_MA_WORK_DIR/data/html
+    ln -s ../../../uploads uploads
+
     GOV_MA_BUILD_DIR="$GOV_MA_SERVER_BASE_DIR/data-build--$BUILD_TS"
 
     echo "build: renomeando $GOV_MA_WORK_DIR/data para $GOV_MA_BUILD_DIR"
