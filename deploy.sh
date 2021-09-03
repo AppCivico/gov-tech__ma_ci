@@ -121,7 +121,7 @@ prepare_build_dir (){
     echo "build: descompatando vendors..."
     tar -xf $GOV_MA_CI_GIT/vendor/$EE_CURRENT_VERSION --directory $GOV_MA_WORK_DIR/data/system/
 
-    cp $GOV_MA_USER_ENV_FILE $GOV_MA_WORK_DIR/data/user/config/.env
+    cp $GOV_MA_USER_ENV_FILE $GOV_MA_WORK_DIR/data/system/user/config/.env
 
     # volta pro 33 que é o que o apache vai usar
     chown 33:33 $GOV_MA_WORK_DIR/data/ -R
