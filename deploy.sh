@@ -137,6 +137,7 @@ prepare_build_dir (){
     echo "build: sincronizando diretorio de uploads $GOV_MA_WORK_DIR/data/html/uploads com $GOV_MA_UPLOAD_DIR"
 
     rsync -a $GOV_MA_WORK_DIR/data/html/uploads/.[^.]* $GOV_MA_UPLOAD_DIR/
+    rsync -a $GOV_MA_WORK_DIR/data/html/uploads/* $GOV_MA_UPLOAD_DIR/
 
     echo "build: apagando diretorio $GOV_MA_WORK_DIR/data/html/uploads"
     rm -rf $GOV_MA_WORK_DIR/data/html/uploads
@@ -149,6 +150,7 @@ prepare_build_dir (){
     echo "build: sincronizando diretorio de imagens $GOV_MA_WORK_DIR/data/html/images com $GOV_MA_IMAGE_DIR"
 
     rsync -a $GOV_MA_WORK_DIR/data/html/images/.[^.]* $GOV_MA_IMAGE_DIR/
+    rsync -a $GOV_MA_WORK_DIR/data/html/images/* $GOV_MA_IMAGE_DIR/
 
     echo "build: apagando diretorio $GOV_MA_WORK_DIR/data/html/images"
     rm -rf $GOV_MA_WORK_DIR/data/html/images
