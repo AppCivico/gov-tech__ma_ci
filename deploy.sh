@@ -21,6 +21,9 @@ GOV_MA_SERVER_BASE_DIR="${GOV_MA_SERVER_BASE_DIR:-$HOME/gov_ma_server}"
 # diretorio com os uploads que sempre são os mesmos entre todas as versoes do site
 GOV_MA_UPLOAD_DIR="${GOV_MA_UPLOAD_DIR:-$HOME/gov_ma_uploads}"
 
+# diretorio com os uploads (privados, avatar dos administradores) que sempre são os mesmos entre todas as versoes do site
+GOV_MA_IMAGE_DIR="${GOV_MA_IMAGE_DIR:-$HOME/gov_ma_private_uploads}"
+
 # diretorio com a pasta node_modules pra agilizar o build
 NODE_MODULES_CACHE_DIR="${NODE_MODULES_CACHE_DIR:-$HOME/gov_ma_node_modules}"
 
@@ -30,7 +33,9 @@ GOV_MA_USER_ENV_FILE="${GOV_MA_USER_ENV_FILE:-$HOME/gov_ma_user_envfile}"
 
 [ ! -d "$GOV_MA_SERVER_BASE_DIR" ] && echo "GOV_MA_SERVER_BASE_DIR [$GOV_MA_SERVER_BASE_DIR] não existe. Configurare o diretorio base (este diretorio precisa ser montado no container do apache)" && exit
 [ ! -d "$GOV_MA_UPLOAD_DIR" ] && echo "GOV_MA_UPLOAD_DIR [$GOV_MA_UPLOAD_DIR] não existe. Diretorio de upload persistente precisa existir!" && exit
+[ ! -d "$GOV_MA_IMAGE_DIR" ] && echo "GOV_MA_IMAGE_DIR [$GOV_MA_IMAGE_DIR] não existe. Diretorio de upload privado persistente precisa existir!" && exit
 [ ! -d "$GOV_MA_CI_GIT" ] && echo "GOV_MA_CI_GIT [$GOV_MA_CI_GIT] não existe ou não está configurado corretamente" && exit
+
 
 # testando se os arquivos do CI existem
 [ ! -f "$GOV_MA_CI_GIT/deploy.sh" ] && echo "[$GOV_MA_CI_GIT/deploy.sh] não existe!" && exit
@@ -110,7 +115,7 @@ prepare_build_dir (){
 
     echo "build: Clonando $GOV_MA_GIT_SRC_DIR/ para $GOV_MA_WORK_DIR/"
 
-    rsync -a --stats $GOV_MA_GIT_SRC_DIR/ $GOV_MA_WORK_DIR/
+    rsync -a $GOV_MA_GIT_SRC_DIR/ $GOV_MA_WORK_DIR/
 
     echo "build: fazendo build dos assets"
 
@@ -131,7 +136,7 @@ prepare_build_dir (){
 
     echo "build: sincronizando diretorio de uploads $GOV_MA_WORK_DIR/data/html/uploads com $GOV_MA_UPLOAD_DIR"
 
-    rsync -a --stats $GOV_MA_WORK_DIR/data/html/uploads/.[^.]* $GOV_MA_UPLOAD_DIR/
+    rsync -a $GOV_MA_WORK_DIR/data/html/uploads/.[^.]* $GOV_MA_UPLOAD_DIR/
 
     echo "build: apagando diretorio $GOV_MA_WORK_DIR/data/html/uploads"
     rm -rf $GOV_MA_WORK_DIR/data/html/uploads
@@ -140,6 +145,18 @@ prepare_build_dir (){
     cd $GOV_MA_WORK_DIR/data/html
     ln -s ../../../uploads uploads
     chown -h 33:33 uploads
+
+    echo "build: sincronizando diretorio de imagens $GOV_MA_WORK_DIR/data/html/images com $GOV_MA_IMAGE_DIR"
+
+    rsync -a $GOV_MA_WORK_DIR/data/html/images/.[^.]* $GOV_MA_IMAGE_DIR/
+
+    echo "build: apagando diretorio $GOV_MA_WORK_DIR/data/html/images"
+    rm -rf $GOV_MA_WORK_DIR/data/html/images
+
+    echo "build: criando link simbolico para pasta de images"
+    cd $GOV_MA_WORK_DIR/data/html
+    ln -s ../../../images images
+    chown -h 33:33 images
 
     GOV_MA_BUILD_DIR="$GOV_MA_SERVER_BASE_DIR/data-build--$BUILD_TS"
 
