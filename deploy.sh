@@ -5,7 +5,7 @@ BUILD_TS=$(date '+%F-%Hh%Mm%Ss')
 
 HOME="/home/$USER"
 
-EE_CURRENT_VERSION="ee.6.0.6.patched.tar.gz"
+EE_CURRENT_VERSION="ee.6.0.6.patched-v2.tar.gz"
 
 # diretorio com o source deste proprio deploy.sh!
 GOV_MA_CI_GIT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
