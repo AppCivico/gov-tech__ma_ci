@@ -187,6 +187,10 @@ deploy_build_dir() {
 
     set +x
     printf ">-------------------------------------------<\n           successfully deployed\n>-------------------------------------------<\n\n"
+
+    # força a atualização do mtime de todos os arquivos css e js
+    find ./current-version/system/user/ -regex '\(.*css\|.*js\)' -type f -exec touch "{}" \;
+
 }
 
 deploy_build_assets() {
